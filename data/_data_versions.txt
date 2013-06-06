@@ -1,0 +1,7 @@
+SZSE*:  2013-05-31
+NASDAQ*:    2013-05-31
+
+country*: 2013-05-31
+https://github.com/umpirsky/country-list
+
+cn_postcode_phonecode:  probably not accurate.
