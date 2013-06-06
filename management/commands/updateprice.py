@@ -52,19 +52,20 @@ def update(period='dwm', retry=6, retry_wait=60 * 2):
         # get last trading day
 
         if p == 'd':
+            # yahoo historical prices are usually delayed
+            td = td - timedelta(3)
             # last weekday
-            # today=Sun: -2 to get Friday,
-            # today=Mon: -3 to get Friday, others: -1
-            last_trade = td - timedelta({6: 2, 0: 3}.get(
-                td.isoweekday(), 1))
+            # today=Sat.: -1 to get Friday,
+            # today=Sun.: -2 to get Friday,
+            last_trade = td - timedelta({6: 1, 7: 2}.get(
+                td.isoweekday(), 0))
 
         elif p == 'w':
             # Monday of last full week
             # Get last Monday
             last_trade = td - timedelta(td.weekday())
-            # Find last last Monday if weekday
-            if td.isoweekday() < 6:
-                last_trade = last_trade - timedelta(7)
+            # Find last last Monday for possible delays
+            last_trade = last_trade - timedelta(7)
 
         elif p == 'm':
             # Get first day of last month
