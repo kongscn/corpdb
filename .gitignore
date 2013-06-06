@@ -1,0 +1,12 @@
+# python cache files
+__pycache__/
+*.pyc
+
+#south migration folder
+/migrations/
+
+*.log*
+
+*.pot
+
+local_settings.py
