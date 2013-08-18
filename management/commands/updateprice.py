@@ -98,7 +98,7 @@ def update_list(stocks, period, retry=3, loop_after=60 * 2):
         logger.warning('Finished %s data update with %d fails' % (
             period, len_stock))
         for p in stocks:
-            logger.error('fail ' + period + p.symbol)
+            logger.error(' '.join(['Fail:', period, p.symbol]))
         return False
 
     fails = []
@@ -113,8 +113,8 @@ def update_list(stocks, period, retry=3, loop_after=60 * 2):
 
         if state == 'DownloadFail':
             fails.append(p)
-            logger.warning(pre_str + '%-6s %s download failed.(%d/%d)' % (
-                p.symbol, period, cur, len_stock))
+            logger.warning(pre_str + '%-6s %s download from %s failed.(%d/%d)' % (
+                p.symbol, period, p.last_update, cur, len_stock))
         elif state == 'InsertError':
             fails.append(p)
             logger.error("%-6s %s insert failed!" % (p.symbol, period))
