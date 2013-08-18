@@ -8,7 +8,8 @@ class ExchangeAdmin(admin.ModelAdmin):
 
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('symbol', 'company', 'market_cap')
+    list_display = ('symbol', 'company', 'market_cap', 'ex', 'subex')
+    list_filter = ['exchanges']
     filter_horizontal = ['exchanges']
 
 

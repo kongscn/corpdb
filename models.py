@@ -102,6 +102,16 @@ class Product(models.Model):
     yahoo_sfx = models.CharField(max_length=5, blank=True)
     note = models.TextField(blank=True)
 
+    def ex(self):
+        return self.exchanges.get(parent=None)
+
+    def subex(self):
+        return self.exchanges.get(parent=self.ex())
+
+    ex.short_description = 'Exchange'
+
+    subex.short_description = 'Sub Exchange'
+
     def __str__(self):
         return self.symbol
 
