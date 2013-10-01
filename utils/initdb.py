@@ -28,8 +28,8 @@ def InitCountries():
     en_county_file = pjoin(DATA_PATH, 'country_en.csv')
     cn_county_file = pjoin(DATA_PATH, 'country_zh_hans.csv')
 
-    countries_en = list(csv.DictReader(open(en_county_file, 'r')))
-    countries_cn = list(csv.DictReader(open(cn_county_file, 'r')))
+    countries_en = list(csv.DictReader(open(en_county_file, 'r', encoding='utf-8')))
+    countries_cn = list(csv.DictReader(open(cn_county_file, 'r', encoding='utf-8')))
     countries_cn = {c['iso']: c['name'] for c in countries_cn}
 
     for item in countries_en:
@@ -52,7 +52,7 @@ def InitCnDistricts():
 
     cn = Country.objects.get(iso='CN')
 
-    recs = list(csv.DictReader(open(district_file, 'r')))
+    recs = list(csv.DictReader(open(district_file, 'r', encoding='utf-8')))
     provinces = {}
     cities = {}
 
@@ -129,7 +129,7 @@ def InitSZStock():
 
     cn = Country.objects.get(iso='CN')
     sz_ex = Exchange.objects.get(symbol='SZSE', parent=None)
-    recs = csv.DictReader(open(sz_file, 'r'))
+    recs = csv.DictReader(open(sz_file, 'r', encoding='utf-8'))
 
     for r in recs:
         c_symbol = r['公司代码'].zfill(6)
@@ -180,7 +180,7 @@ def ImportNasdaqStock(file, ex, sub_ex):
     if sub_ex.product_set.count() > 0:
         return
 
-    recs = csv.DictReader(open(file, 'r'))
+    recs = csv.DictReader(open(file, 'r', encoding='utf-8'))
 
     for r in recs:
         c_name = r['Name'].strip()
