@@ -167,14 +167,14 @@ def InitSZStock():
 
                 product = Product(symbol=r[c + '股代码'].zfill(6),
                                   name=r[c + '股简称'].replace(' ', ''),
+                                  exchange=sz_ex,
+                                  sub_exchange=sub_ex,
                                   company=comp,
                                   market_cap=int(r[c + '股流通股本'].strip()),
                                   ipo_date=r[c + '股上市日期'].strip(),
                                   yahoo_sfx='.SZ',
                                   )
                 product.save()
-                product.exchanges.add(sz_ex)
-                product.exchanges.add(sub_ex)
 
     print('Initialize SZStocks: succeed')
 
@@ -219,8 +219,8 @@ def InitCnSectors():
                                     parent=sector, standard=sector_standard)
                 sub_sector.save()
                 sub_sectors[hangye] = sub_sector
-            product.sectors.add(sector)
-            product.sectors.add(sub_sector)
+            product.sector = sector
+            product.sub_sector = sub_sector
             product.save()
             logger.info('%s added: %s-%s'%(code, menlei, hangye))
 
@@ -242,13 +242,15 @@ def ImportNasdaqStock(file, ex, sub_ex):
         else:
             raise Exception
 
-        product = Product(symbol=r['Symbol'].strip(), company=comp,
+        product = Product(symbol=r['Symbol'].strip(),
+                          exchange=ex,
+                          sub_exchange=sub_ex,
+                          company=comp,
                           market_cap=int(float(r['MarketCap'].strip())),
                           ipo_date='' if r['IPOyear'] == 'n/a'
                           else r['IPOyear'].strip())
 
         product.save()
-        product.exchanges.add(ex, sub_ex)
 
 
 def InitNasdaqStock():
