@@ -14,7 +14,7 @@ from os.path import join as pjoin
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 
-from ypl.models import *
+from corpdb.models import *
 
 DATA_PATH = pjoin(abspath(dirname(dirname(__file__))),
                   'data')

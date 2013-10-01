@@ -118,9 +118,8 @@ class Product(models.Model):
     class Meta:
         db_table = 'product'
 
-
 @python_2_unicode_compatible
-class OhlcD(models.Model):
+class OHLC(models.Model):
     product = models.ForeignKey(Product)
     date = models.DateField()
     open = models.FloatField()
@@ -134,50 +133,23 @@ class OhlcD(models.Model):
         return self.product
 
     class Meta:
+        abstract = True
+        index_together = [
+            ['product', 'date'],
+        ]
+
+class OhlcD(OHLC):
+    class Meta(OHLC.Meta):
         db_table = 'ohlc_d'
-        index_together = [
-            ['product', 'date'],
-        ]
 
 
-@python_2_unicode_compatible
-class OhlcW(models.Model):
-    product = models.ForeignKey(Product)
-    date = models.DateField()
-    open = models.FloatField()
-    high = models.FloatField()
-    low = models.FloatField()
-    close = models.FloatField()
-    adj_close = models.FloatField()
-    volume = models.BigIntegerField()
-
-    def __str__(self):
-        return self.product
-
-    class Meta:
+class OhlcW(OHLC):
+    class Meta(OHLC.Meta):
         db_table = 'ohlc_w'
-        index_together = [
-            ['product', 'date'],
-        ]
 
 
-@python_2_unicode_compatible
-class OhlcM(models.Model):
-    product = models.ForeignKey(Product)
-    date = models.DateField()
-    open = models.FloatField()
-    high = models.FloatField()
-    low = models.FloatField()
-    close = models.FloatField()
-    adj_close = models.FloatField()
-    volume = models.BigIntegerField()
-
-    def __str__(self):
-        return self.product
-
-    class Meta:
+class OhlcM(OHLC):
+    class Meta(OHLC.Meta):
         db_table = 'ohlc_m'
-        index_together = [
-            ['product', 'date'],
-        ]
+
 

@@ -1,6 +1,6 @@
 from south.signals import post_migrate
 
-from ypl.utils.initdb import init_db
+from corpdb.utils.initdb import init_db
 
 
 def migration_callback(**kwargs):

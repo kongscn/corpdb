@@ -9,9 +9,9 @@ from django.db.models import Max
 from django.db.models import Q
 from django.db import transaction
 
-from ypl.models import Product
-from ypl.models import OhlcD, OhlcW, OhlcM
-from ypl.utils.pullprice import pull_price
+from corpdb.models import Product
+from corpdb.models import OhlcD, OhlcW, OhlcM
+from corpdb.utils.pullprice import pull_price
 
 
 logger = logging.getLogger(__name__)

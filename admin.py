@@ -1,5 +1,5 @@
 from django.contrib import admin
-from ypl.models import Exchange, Product
+from corpdb.models import Exchange, Product
 
 
 class ExchangeAdmin(admin.ModelAdmin):
