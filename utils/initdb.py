@@ -8,14 +8,18 @@ Created on Jun 4, 2013
 """
 
 import csv
+import logging
 from os.path import abspath, dirname
 from os.path import join as pjoin
 
+import pandas as pd
+import string
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 
 from corpdb.models import *
 
+logger = logging.getLogger(__name__)
 DATA_PATH = pjoin(abspath(dirname(dirname(__file__))),
                   'data')
 
@@ -174,6 +178,51 @@ def InitSZStock():
 
     print('Initialize SZStocks: succeed')
 
+@transaction.commit_on_success
+def InitCnSectors():
+    if Sector.objects.count() > 0:
+        return
+    file = pjoin(DATA_PATH, 'cn_sectors.xlsx')
+    sectors = {}
+    sub_sectors = {}
+    df = pd.read_excel(file, 'Sheet1').fillna(method='ffill')
+    sector_standard, created = SectorStandard.objects.get_or_create(
+        abbr = 'CSRC',
+        name = '中国证监会上市公司行业分类指引'
+    )
+    if created:
+        sector_standard.save()
+
+    for row in df.iterrows():
+        data = row[1]
+        menlei = set(data[0]).intersection(string.ascii_uppercase).pop()
+        menlei_name = data[0][:-3]
+        hangye = int(data[1])
+        hangye_name = data[2]
+        code = str(int(data[3])).zfill(6)
+
+        try:
+            product = Product.objects.get(symbol=code)
+        except ObjectDoesNotExist:
+            logger.warn('%s not found!'%code)
+            product = None
+        if product:
+            sector = sectors.get(menlei, None)
+            if sector is None:
+                sector = Sector(code=menlei, name=menlei_name, standard=sector_standard)
+                sector.save()
+                sectors[menlei] = sector
+
+            sub_sector = sub_sectors.get(hangye, None)
+            if sub_sector is None:
+                sub_sector = Sector(code=hangye, name=hangye_name,
+                                    parent=sector, standard=sector_standard)
+                sub_sector.save()
+                sub_sectors[hangye] = sub_sector
+            product.sectors.add(sector)
+            product.sectors.add(sub_sector)
+            product.save()
+            logger.info('%s added: %s-%s'%(code, menlei, hangye))
 
 @transaction.commit_on_success
 def ImportNasdaqStock(file, ex, sub_ex):
@@ -232,11 +281,11 @@ def InitNasdaqStock():
 
 def init_db():
     InitCountries()
-
     InitCnDistricts()
 
     InitExchanges()
 
     InitSZStock()
+    InitCnSectors()
 
     InitNasdaqStock()

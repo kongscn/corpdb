@@ -68,7 +68,6 @@ class Company(models.Model):
     name_en = models.CharField(max_length=255, blank=True)
     country = models.ForeignKey(Country, null=True, blank=True)
     districts = models.ManyToManyField(District, null=True, blank=True)
-    sectors = models.ManyToManyField(Sector, null=True, blank=True)
 
 
     def __str__(self):
@@ -97,6 +96,7 @@ class Product(models.Model):
     name = models.CharField(max_length=255, blank=True)
     exchanges = models.ManyToManyField(Exchange, null=True, blank=True)
     company = models.ForeignKey(Company)
+    sectors = models.ManyToManyField(Sector, null=True, blank=True)
     market_cap = models.BigIntegerField(null=True, blank=True)
     ipo_date = models.CharField(max_length=10, blank=True)
     yahoo_sfx = models.CharField(max_length=5, blank=True)
@@ -104,13 +104,17 @@ class Product(models.Model):
 
     def ex(self):
         return self.exchanges.get(parent=None)
-
     def subex(self):
         return self.exchanges.get(parent=self.ex())
-
     ex.short_description = 'Exchange'
-
     subex.short_description = 'Sub Exchange'
+
+    def sector(self):
+        return self.sectors.get(parent=None)
+    def sub_sector(self):
+        return self.sectors.get(parent=self.sector())
+    sector.short_description = 'Sector'
+    sub_sector.short_description = 'Sub Sector'
 
     def __str__(self):
         return self.symbol
