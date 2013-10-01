@@ -41,7 +41,7 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        logging.getLogger('ypl.config').debug(options)
+        logging.getLogger('corpdb.config').debug(options)
         update(period=options['period'], retry=options['retry'])
 
 
