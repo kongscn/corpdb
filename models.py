@@ -94,27 +94,38 @@ class Exchange(models.Model):
 class Product(models.Model):
     symbol = models.CharField(max_length=15)
     name = models.CharField(max_length=255, blank=True)
-    exchange = models.ForeignKey(Exchange, null=True, blank=True)
-    sub_exchange = models.ForeignKey(Exchange, null=True, blank=True, related_name='product_set_sub')
-    sector = models.ForeignKey(Sector, null=True, blank=True)
-    sub_sector = models.ForeignKey(Sector, null=True, blank=True, related_name='product_set_sub')
+    exchanges = models.ManyToManyField(Exchange, blank=True, null=True)
+    sectors = models.ManyToManyField(Sector, blank=True, null=True)
     company = models.ForeignKey(Company)
     market_cap = models.BigIntegerField(null=True, blank=True)
     ipo_date = models.CharField(max_length=10, blank=True)
     yahoo_sfx = models.CharField(max_length=5, blank=True)
     note = models.TextField(blank=True)
 
-    exchange.short_description = 'Exchange'
-    sub_exchange.short_description = 'Sub Exchange'
+    def ex(self):
+        return self.exchanges.get(parent=None)
+
+    def subex(self):
+        return self.exchanges.get(parent=self.ex())
+
+    ex.short_description = 'Exchange'
+    subex.short_description = 'Sub Exchange'
+
+    def sector(self):
+        return self.sectors.get(parent=None)
+
+    def subsector(self):
+        return self.sectors.get(parent=self.ex())
 
     sector.short_description = 'Sector'
-    sub_sector.short_description = 'Sub Sector'
+    subsector.short_description = 'Sub Sector'
 
     def __str__(self):
         return self.symbol
 
     class Meta:
         db_table = 'product'
+
 
 @python_2_unicode_compatible
 class OHLC(models.Model):
@@ -135,6 +146,7 @@ class OHLC(models.Model):
         index_together = [
             ['product', 'date'],
         ]
+
 
 class OhlcD(OHLC):
     class Meta(OHLC.Meta):

@@ -1,12 +1,3 @@
-#! /usr/env python3
-# -*- coding: utf-8 -*-
-
-"""
-Created on Jun 4, 2013
-
-@author: kongs
-"""
-
 import csv
 import logging
 from os.path import abspath, dirname
@@ -27,6 +18,7 @@ DATA_PATH = pjoin(abspath(dirname(dirname(__file__))),
 @transaction.commit_on_success
 def InitCountries():
     if Country.objects.count() > 0:
+        logger.warn('Countries exist, skip.')
         return
 
     en_county_file = pjoin(DATA_PATH, 'country_en.csv')
@@ -44,12 +36,13 @@ def InitCountries():
         )
         country.save()
 
-    print('Init countries: succeed')
+    logger.info('Init countries: succeed.')
 
 
 @transaction.commit_on_success
 def InitCnDistricts():
     if District.objects.count() > 0:
+        logger.warn('China districts exist, skip.')
         return
 
     district_file = pjoin(DATA_PATH, 'cn_postcode_phonecode.csv')
@@ -87,12 +80,13 @@ def InitCnDistricts():
                              zipcode=zipcode, country=cn)
                 z.save()
 
-    print('Init districts: succeed')
+    logger.info('Init districts: succeed.')
 
 
 @transaction.commit_on_success
 def InitExchanges():
     if Exchange.objects.count() > 0:
+        logger.warn('Exchanges exist, skip')
         return
 
     e = Exchange(symbol='SSE', name='上海证券交易所')
@@ -122,12 +116,13 @@ def InitExchanges():
     sub_e = Exchange(symbol='GS', name='Global Select', parent=e)
     sub_e.save()
 
-    print('Init exchanges: succeed')
+    logger.info('Init exchanges: succeed.')
 
 
 @transaction.commit_on_success
 def InitSZStock():
     if Product.objects.count() > 0:
+        logger.warn('Products exist, skip InitSZStock.')
         return
     sz_file = pjoin(DATA_PATH, 'szse-all.csv')
 
@@ -149,7 +144,7 @@ def InitSZStock():
             city = District.objects.get(name=c_city, parent=province)
         except ObjectDoesNotExist:
             city = None
-            print('City %s not found.' % c_city)
+            logger.warn('City %s not found.' % c_city)
 
         comp = Company(symbol=c_symbol, name=c_name, name_full=c_name_full,
                        name_en=c_name_en, country=cn)
@@ -167,28 +162,30 @@ def InitSZStock():
 
                 product = Product(symbol=r[c + '股代码'].zfill(6),
                                   name=r[c + '股简称'].replace(' ', ''),
-                                  exchange=sz_ex,
-                                  sub_exchange=sub_ex,
                                   company=comp,
                                   market_cap=int(r[c + '股流通股本'].strip()),
                                   ipo_date=r[c + '股上市日期'].strip(),
                                   yahoo_sfx='.SZ',
-                                  )
+                )
                 product.save()
+                product.exchanges.add(sz_ex)
+                product.exchanges.add(sub_ex)
 
-    print('Initialize SZStocks: succeed')
+    logger.info('Initialize SZStocks: succeed.')
+
 
 @transaction.commit_on_success
 def InitCnSectors():
     if Sector.objects.count() > 0:
+        logger.warn('Sectors exist, skip.')
         return
     file = pjoin(DATA_PATH, 'cn_sectors.xlsx')
     sectors = {}
     sub_sectors = {}
     df = pd.read_excel(file, 'Sheet1').fillna(method='ffill')
     sector_standard, created = SectorStandard.objects.get_or_create(
-        abbr = 'CSRC',
-        name = '中国证监会上市公司行业分类指引'
+        abbr='CSRC',
+        name='中国证监会上市公司行业分类指引'
     )
     if created:
         sector_standard.save()
@@ -204,7 +201,7 @@ def InitCnSectors():
         try:
             product = Product.objects.get(symbol=code)
         except ObjectDoesNotExist:
-            logger.warn('%s not found!'%code)
+            logger.warn('%s not found!' % code)
             product = None
         if product:
             sector = sectors.get(menlei, None)
@@ -219,14 +216,15 @@ def InitCnSectors():
                                     parent=sector, standard=sector_standard)
                 sub_sector.save()
                 sub_sectors[hangye] = sub_sector
-            product.sector = sector
-            product.sub_sector = sub_sector
-            product.save()
-            logger.info('%s added: %s-%s'%(code, menlei, hangye))
+            product.sectors.add(sector)
+            product.sectors.add(sub_sector)
+            logger.info('%s added: %s-%s' % (code, menlei, hangye))
+
 
 @transaction.commit_on_success
 def ImportNasdaqStock(file, ex, sub_ex):
     if sub_ex.product_set.count() > 0:
+        logger.warn('Products in %s exist, skip' % sub_ex)
         return
 
     recs = csv.DictReader(open(file, 'r', encoding='utf-8'))
@@ -243,20 +241,19 @@ def ImportNasdaqStock(file, ex, sub_ex):
             raise Exception
 
         product = Product(symbol=r['Symbol'].strip(),
-                          exchange=ex,
-                          sub_exchange=sub_ex,
                           company=comp,
                           market_cap=int(float(r['MarketCap'].strip())),
                           ipo_date='' if r['IPOyear'] == 'n/a'
                           else r['IPOyear'].strip())
-
         product.save()
+        product.exchanges.add(ex)
+        product.exchanges.add(sub_ex)
+
+    logger.info('Initialize %s: suceed.' % sub_ex)
 
 
 def InitNasdaqStock():
     nasdaq_ex = Exchange.objects.get(symbol='NASDAQ', parent=None)
-    if nasdaq_ex.product_set.count() > 0:
-        return
 
     cm_file = pjoin(DATA_PATH, 'nasdaq-cm.csv')
     gm_file = pjoin(DATA_PATH, 'nasdaq-gm.csv')
@@ -265,20 +262,18 @@ def InitNasdaqStock():
     ex_get = Exchange.objects.get
     sub_exes = {'CM': {'file': cm_file,
                        'sub_ex': ex_get(symbol='CM', parent=nasdaq_ex),
-                       },
+    },
                 'GM': {'file': gm_file,
                        'sub_ex': ex_get(symbol='GM', parent=nasdaq_ex),
-                       },
+                },
                 'GS': {'file': gs_file,
                        'sub_ex': ex_get(symbol='GS', parent=nasdaq_ex),
-                       },
-                }
+                },
+    }
 
     for key in sub_exes:
         ImportNasdaqStock(sub_exes[key]['file'],
                           nasdaq_ex, sub_exes[key]['sub_ex'])
-
-    print('Initialize NasdaqStocks: succeed')
 
 
 def init_db():
