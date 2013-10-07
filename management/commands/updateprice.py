@@ -96,10 +96,8 @@ def update_list(stocks, period, retry=3, loop_after=60 * 2):
         return True
     if retry < 0:
         logger.warning('Finished %s data update with %d fails' % (
-            period, len_stock))
-        for p in stocks:
-            logger.error('Failed to insert symbols: %s %s',period, ' '.join([p.symbol for p in stocks]) )
-            # logger.error(' '.join(['Fail:', period, p.symbol]))
+                        period, len_stock))
+        logger.error('Failed to insert symbols: %s %s',period, ' '.join([p.symbol for p in stocks]) )
         return False
 
     fails = []
