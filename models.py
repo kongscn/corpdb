@@ -126,6 +126,16 @@ class Product(models.Model):
     class Meta:
         db_table = 'product'
 
+class Index(models.Model):
+    symbol = models.CharField(max_length=10)
+    name = models.CharField(max_length=50, blank=True)
+    products = models.ManyToManyField(Product, blank=True, null=True)
+
+    def __str__(self):
+        return self.symbol
+
+    class Meta:
+        db_table = 'index'
 
 @python_2_unicode_compatible
 class OHLC(models.Model):
