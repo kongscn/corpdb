@@ -4,8 +4,9 @@ import urllib.parse
 import urllib.request
 
 # timeout in seconds
-timeout = 10
+timeout = 6
 socket.setdefaulttimeout(timeout)
+logger = logging.getLogger(__name__)
 
 
 def pull_price(symbol, startd=None, endd=None, period='d'):
@@ -31,8 +32,10 @@ def pull_price(symbol, startd=None, endd=None, period='d'):
     # req = urllib.request.Request('http://ichart.finance.yahoo.com/table.csv?g=m&s=600000.SS')
     try:
         response = urllib.request.urlopen(req)
-        return response.read().decode()
+        content = response.read().decode()
+        response.close()
+        return content
     except Exception as e:
-        logging.debug(str(e.__class__) + str(e))
-        logging.debug(req.full_url)
+        logger.debug(str(e.__class__) + str(e))
+        logger.debug(req.full_url)
         return False

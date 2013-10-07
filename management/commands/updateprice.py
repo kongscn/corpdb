@@ -53,7 +53,7 @@ def update(period='dwm', retry=6, retry_wait=60 * 2):
 
         if p == 'd':
             # yahoo historical prices are usually delayed
-            td = td - timedelta(3)
+            td = td - timedelta(4)
             # last weekday
             # today=Sat.: -1 to get Friday,
             # today=Sun.: -2 to get Friday,
@@ -98,7 +98,8 @@ def update_list(stocks, period, retry=3, loop_after=60 * 2):
         logger.warning('Finished %s data update with %d fails' % (
             period, len_stock))
         for p in stocks:
-            logger.error(' '.join(['Fail:', period, p.symbol]))
+            logger.error('Failed to insert symbols: %s %s',period, ' '.join([p.symbol for p in stocks]) )
+            # logger.error(' '.join(['Fail:', period, p.symbol]))
         return False
 
     fails = []
@@ -122,7 +123,9 @@ def update_list(stocks, period, retry=3, loop_after=60 * 2):
             logger.info(pre_str + '%-6s %4s %s records from %s inserted.(%d/%d)'
                         % (p.symbol, state, period,
                            p.last_update, cur, len_stock))
-
+            if state > 1000:
+                continue
+        tm.sleep(2)
     if retry > 0:
         logger.info(pre_str +
                     'Current loop end. %d %s fails. Retry %d sec later.' %
