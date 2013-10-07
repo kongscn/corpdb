@@ -1,7 +1,7 @@
 import logging
 import csv
 import time
-from datetime import *
+from datetime import timedelta, date
 from optparse import make_option
 
 from django.core.management.base import BaseCommand
