@@ -1,6 +1,6 @@
 import logging
 import csv
-import time as tm
+import time
 from datetime import *
 from optparse import make_option
 
@@ -110,10 +110,12 @@ def update_list(stocks, period, retry=3, loop_after=60 * 2):
 
         state = update_single(p, period=period)
 
+        # TODO: use Exception
         if state == 'DownloadFail':
             fails.append(p)
             logger.warning(pre_str + '%-6s %s download from %s failed.(%d/%d)' % (
                 p.symbol, period, p.last_update, cur, len_stock))
+            time.sleep(2)
         elif state == 'InsertError':
             fails.append(p)
             logger.error("%-6s %s insert failed!" % (p.symbol, period))
@@ -121,14 +123,12 @@ def update_list(stocks, period, retry=3, loop_after=60 * 2):
             logger.info(pre_str + '%-6s %4s %s records from %s inserted.(%d/%d)'
                         % (p.symbol, state, period,
                            p.last_update, cur, len_stock))
-            if state > 1000:
-                continue
-        tm.sleep(2)
+
     if retry > 0:
         logger.info(pre_str +
                     'Current loop end. %d %s fails. Retry %d sec later.' %
                     (len(fails), period, loop_after))
-        tm.sleep(loop_after)
+        time.sleep(loop_after)
 
     update_list(stocks=fails,
                 period=period,
