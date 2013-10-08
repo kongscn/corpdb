@@ -2,6 +2,7 @@ import socket
 import logging
 import urllib.parse
 import urllib.request
+from urllib.error import URLError
 
 # timeout in seconds
 timeout = 6
@@ -35,7 +36,7 @@ def pull_price(symbol, startd=None, endd=None, period='d'):
         content = response.read().decode()
         response.close()
         return content
-    except Exception as e:
+    except (URLError, ConnectionResetError, socket.timeout) as e:
         logger.debug(str(e.__class__) + str(e))
         logger.debug(req.full_url)
-        return False
+        raise e

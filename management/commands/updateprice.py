@@ -1,8 +1,10 @@
 import logging
 import csv
 import time
+import socket
 from datetime import timedelta, date
 from optparse import make_option
+from urllib.error import URLError
 
 from django.core.management.base import BaseCommand
 from django.db.models import Max
@@ -38,38 +40,51 @@ class Command(BaseCommand):
                     dest='retry',
                     default=6,
                     help='Retry times. Default is 6.'),
+        make_option('--lastdate', '-d',
+                    action='store',
+                    dest='ld',
+                    default='TD',
+                    help=('Update if last trader date is earlier than this date.'
+                          'Values can be init, TD or a date formated YYYY-MM-DD')
+                    ),
     )
 
     def handle(self, *args, **options):
         logging.getLogger('corpdb.config').debug(options)
-        update(period=options['period'], retry=options['retry'])
+        update(period=options['period'], retry=options['retry'], ld=options['ld'])
 
 
-def update(period='dwm', retry=6, retry_wait=60 * 2):
-    td = date.today()
-
+def update(period='dwm', retry=6, retry_wait=60 * 2, ld='TD'):
+    if ld == 'init':
+        ld = date(1992, 1, 1)
+    elif ld == 'TD':
+        ld = date.today()
+    else:
+        try:
+            ld = date(*map(int, ld.split('-')))
+        except:
+            raise ValueError('Date values error. Set date like 1992-01-15. Got "%s"' % ld)
     for p in period:
         # get last trading day
-
         if p == 'd':
             # yahoo historical prices are usually delayed
-            td = td - timedelta(4)
+            ld = ld - timedelta(4)
             # last weekday
             # today=Sat.: -1 to get Friday,
             # today=Sun.: -2 to get Friday,
-            last_trade = td - timedelta({6: 1, 7: 2}.get(
-                td.isoweekday(), 0))
+            last_trade = ld - timedelta({6: 1, 7: 2}.get(
+                ld.isoweekday(), 0))
 
         elif p == 'w':
             # Monday of last full week
             # Get last Monday
-            last_trade = td - timedelta(td.weekday())
+            last_trade = ld - timedelta(ld.weekday())
             # Find last last Monday for possible delays
             last_trade = last_trade - timedelta(7)
 
         elif p == 'm':
             # Get first day of last month
-            last_trade = (td.replace(day=1) - timedelta(1)).replace(day=1)
+            last_trade = (ld.replace(day=1) - timedelta(1)).replace(day=1)
 
         else:
             raise Exception
@@ -108,17 +123,18 @@ def update_list(stocks, period, retry=3, loop_after=60 * 2):
         if not p.last_update:
             p.last_update = date(1991, 1, 1)
 
-        state = update_single(p, period=period)
-
-        # TODO: use Exception
-        if state == 'DownloadFail':
+        try:
+            state = update_single(p, period=period)
+        except (URLError, ConnectionResetError, socket.timeout):
             fails.append(p)
             logger.warning(pre_str + '%-6s %s download from %s failed.(%d/%d)' % (
                 p.symbol, period, p.last_update, cur, len_stock))
-            time.sleep(2)
-        elif state == 'InsertError':
+            time.sleep(3)
+        except Exception as e:
             fails.append(p)
-            logger.error("%-6s %s insert failed!" % (p.symbol, period))
+            logger.critical('Unknown Exception')
+            logger.critical(str(e.__class__) + str(e))
+            raise e
         else:
             logger.info(pre_str + '%-6s %4s %s records from %s inserted.(%d/%d)'
                         % (p.symbol, state, period,
@@ -142,8 +158,6 @@ def update_single(product, period):
     r = pull_price(symbol=product.symbol + product.yahoo_sfx,
                    startd=product.last_update,
                    period=period)
-    if not r:
-        return 'DownloadFail'
     r = r.strip().splitlines()
     r = r[2:-1]  # remove header, latest and last data(data on date_from).
     r.reverse()  # put older data ahead
